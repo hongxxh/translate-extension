@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>划词译 · 面板效果预览</title>
+<style>
+  body { margin:0; min-height:100vh; background:#EEF0F3; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif; color:#1F2329; }
+  .page { max-width:640px; margin:0 auto; padding:48px 24px 200px; }
+  .page h1 { font-size:20px; margin-bottom:6px; }
+  .page p { color:#6B7280; font-size:13.5px; line-height:1.8; }
+  .page .tip { margin:18px 0 26px; padding:10px 14px; background:#EAF2FB; border:1px solid #C9DCEF; border-radius:8px; font-size:12.5px; color:#185FA5; }
+  .stage { position:relative; min-height:560px; }
+  /* ---- 面板样式（与 content.js 保持一致） ---- */
+  
+  
+  .st-card, .st-card * {
+    box-sizing: border-box; margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  .st-card {
+    width: 384px; max-height: 540px; display: flex; flex-direction: column;
+    background: #FFFFFF; border: 1px solid #E4E6EB; border-radius: 12px;
+    box-shadow: 0 10px 32px rgba(15,23,42,.16), 0 2px 6px rgba(15,23,42,.06);
+    overflow: hidden; color: #1F2329; font-size: 13px; line-height: 1.62;
+    text-align: left; direction: ltr;
+  }
+  .st-hd { padding: 13px 15px 11px; border-bottom: 1px solid #F0F1F4; position: relative; }
+  .st-title { display: flex; align-items: baseline; gap: 8px; padding-right: 26px; }
+  .st-word { font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: #101828; word-break: break-word; }
+  /* 句子模式：原文最多只显示一行，点击展开/收起 */
+  .st-word.is-sent {
+    font-size: 13px; font-weight: 400; color: #4B5563; line-height: 1.55; letter-spacing: 0;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    overflow: hidden; cursor: pointer;
+  }
+  .st-word.is-sent.open { display: block; -webkit-line-clamp: unset; white-space: pre-wrap; }
+  .st-word.is-sent.open::after { content: "  收起"; font-size: 11px; color: #9AA1AC; white-space: nowrap; }
+  .st-phon { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; color: #6B7280; font-size: 12px; }
+  .st-phon .st-p { display: inline-flex; align-items: center; gap: 3px; }
+  .st-spk {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border: 0; border-radius: 5px; background: transparent;
+    color: #185FA5; cursor: pointer; padding: 0;
+  }
+  .st-spk:hover { background: #EAF2FB; }
+  .st-close {
+    position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
+    border: 0; border-radius: 6px; background: transparent; color: #9AA1AC;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .st-close:hover { background: #F3F4F6; color: #4B5563; }
+  .st-body { overflow-y: auto; overscroll-behavior: contain; flex: 1 1 auto; }
+  .st-body::-webkit-scrollbar { width: 8px; }
+  .st-body::-webkit-scrollbar-thumb { background: #D8DBE1; border-radius: 4px; }
+  .st-body::-webkit-scrollbar-track { background: transparent; }
+
+  .st-sec { padding: 12px 15px; border-bottom: 1px solid #F3F4F6; }
+  .st-sec:last-child { border-bottom: 0; }
+  .st-sec-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .st-badge {
+    font-size: 10px; font-weight: 600; letter-spacing: .04em; padding: 1px 5px;
+    border-radius: 4px; background: #EAF2FB; color: #185FA5; line-height: 1.5;
+  }
+  .st-sec-t { font-size: 11px; font-weight: 600; color: #6B7280; letter-spacing: .02em; }
+  .st-mode { margin-left: auto; font-size: 10px; color: #9AA1AC; }
+  /* 面板内通道切换：做成文字样式，避免破坏标题区的克制感 */
+  .st-ch {
+    font: inherit; font-size: 11px; font-weight: 600; color: #6B7280;
+    letter-spacing: .02em; border: 0; background: transparent; padding: 0 2px;
+    margin: 0 -2px; cursor: pointer; outline: none; max-width: 210px;
+  }
+  .st-ch:hover, .st-ch:focus { color: #185FA5; }
+
+  .st-ai-text { color: #1F2329; white-space: pre-wrap; word-break: break-word; }
+  .st-ai-text.is-word { font-size: 14px; }
+  .st-ai-text .st-ai-line1 { font-size: 15px; font-weight: 600; color: #101828; }
+  .st-ai-loading { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
+  .st-sk { height: 11px; border-radius: 4px; background: linear-gradient(90deg,#F1F3F5 25%,#E7EAEE 37%,#F1F3F5 63%); background-size: 400% 100%; animation: st-skim 1.3s ease-in-out infinite; }
+  @keyframes st-skim { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .st-ai-err { color: #6B7280; font-size: 12.5px; }
+  .st-ai-err b { color: #B4232A; font-weight: 500; }
+  .st-act {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; border: 1px solid #CBD8E8;
+    border-radius: 6px; background: #F7FAFD; color: #185FA5; font-size: 12px; cursor: pointer;
+  }
+  .st-act:hover { background: #EAF2FB; }
+
+  .st-src + .st-src { margin-top: 10px; }
+  .st-src-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .st-src-n { font-size: 11px; font-weight: 600; color: #98A1AC; letter-spacing: .02em; }
+  .st-star { color: #E0A11B; font-size: 10px; letter-spacing: 1px; }
+  .st-def { display: flex; gap: 7px; align-items: flex-start; margin-bottom: 5px; }
+  .st-pos {
+    flex: 0 0 auto; font-size: 11px; font-style: italic; color: #185FA5;
+    background: #EAF2FB; border-radius: 4px; padding: 0 5px; margin-top: 2px; line-height: 1.55;
+  }
+  .st-def-t { color: #2B3038; word-break: break-word; }
+  .st-ex { margin: 3px 0 7px 0; padding-left: 9px; border-left: 2px solid #EDEFF3; }
+  .st-ex-en { color: #5A6270; font-size: 12px; }
+  .st-ex-zh { color: #8A919D; font-size: 12px; }
+
+  .st-sent { margin-bottom: 8px; }
+  .st-sent:last-child { margin-bottom: 0; }
+  .st-sent-en { color: #374151; font-size: 12.5px; }
+  .st-sent-zh { color: #6B7280; font-size: 12.5px; }
+
+  .st-empty { color: #9AA1AC; font-size: 12.5px; }
+
+  .st-ft { display: flex; flex-wrap: wrap; gap: 6px; padding: 9px 15px; background: #FAFBFC; border-top: 1px solid #F0F1F4; }
+  .st-link {
+    font-size: 11px; color: #5A6270; text-decoration: none; padding: 2px 8px;
+    border: 1px solid #E4E6EB; border-radius: 999px; background: #fff; cursor: pointer; line-height: 1.6;
+  }
+  .st-link:hover { border-color: #B9CBE0; color: #185FA5; }
+
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary .st-src-n::before {
+    content: ""; display: inline-block; width: 0; height: 0; margin-right: 5px;
+    border-left: 4px solid #AAB2BD; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
+    vertical-align: middle; transition: transform .12s ease;
+  }
+  details[open] > summary .st-src-n::before { transform: rotate(90deg); }
+
+  /* 气泡按钮：天青底板 + 深墨文字，与 LOGO 同色系 */
+  
+  .st-card { position:absolute; top:24px; left:50%; margin-left:-192px; }
+</style>
+</head>
+<body>
+<div class="page">
+  <h1>划词译 · 面板效果预览</h1>
+  <p>以下是用真实词典接口数据静态渲染的成品效果。安装扩展后，在任意网页选中文字点击「译」按钮，即可在当前页面弹出同样的面板。</p>
+  <div class="tip">演示词条：defer（面板顶部为英/美音标 + 发音按钮；AI 区为 WorkBuddy 翻译流式结果；下方为各权威词典释义；底部为权威词典官网跳转）</div>
+  <div class="stage">
+    <div class="st-card">
+      <div class="st-hd">
+        <div class="st-title"><span class="st-word">defer</span></div>
+        <div class="st-phon">
+          <span class="st-p">英 /dɪˈfɜː(r)/</span>
+          <span class="st-p">美 /dɪˈfɜːr/</span>
+        </div>
+      </div>
+      <div class="st-body">
+        <section class="st-sec">
+          <div class="st-sec-hd"><span class="st-badge">AI</span><span class="st-sec-t">WorkBuddy 翻译</span><span class="st-mode"></span></div>
+          <div class="st-ai-text is-word"><div class="st-ai-line1">推迟；暂缓</div><div>v. 推迟，延期；（ defer to ）听从，遵从<br>① The committee deferred its decision. | 委员会推迟了决定。</div></div>
+        </section>
+        <section class="st-sec"><div class="st-src"><div class="st-src-hd"><span class="st-src-n">有道词典 · 英汉双解</span></div><div class="st-def"><span class="st-pos">v.</span><span class="st-def-t">延期，推迟；听从，遵从（defer to）</span></div><div class="st-def"><span class="st-def-t">【名】 （Defer）（法）德费（人名）</span></div></div><div class="st-src"><div class="st-src-hd"><span class="st-src-n">必应词典 · 微软</span></div><div class="st-def"><span class="st-pos">v.</span><span class="st-def-t">推迟；延缓；展期</span></div></div><div class="st-src"><div class="st-src-hd"><span class="st-src-n">柯林斯高阶词典</span><span class="st-star">★</span></div><div class="st-def"><span class="st-pos">V-T</span><span class="st-def-t">If you defer an event or action, you arrange for it to happen at a later date, rather than immediately or at the previously planned time. 推迟</span></div><div class="st-ex"><div class="st-ex-en">Customers often defer payment for as long as possible.</div><div class="st-ex-zh">顾客们经常尽可能地推迟付款。</div></div><div class="st-def"><span class="st-pos">V-I</span><span class="st-def-t">If you defer to someone, you accept their opinion or do what they want you to do, even when you do not agree with it yourself, because you respect them or their authority. 听从; 服从</span></div><div class="st-ex"><div class="st-ex-en">Doctors are encouraged to defer to experts.</div><div class="st-ex-zh">鼓励医生们听从专家的意见。</div></div></div><div class="st-src"><div class="st-src-hd"><span class="st-src-n">词形变化</span></div><div class="st-def"><span class="st-pos">第三人称单数</span><span class="st-def-t">defers</span></div><div class="st-def"><span class="st-pos">现在分词</span><span class="st-def-t">deferring</span></div><div class="st-def"><span class="st-pos">过去式</span><span class="st-def-t">deferred</span></div><div class="st-def"><span class="st-pos">过去分词</span><span class="st-def-t">deferred</span></div></div><div class="st-src"><div class="st-src-hd"><span class="st-src-n">必应 · 网络释义</span></div><div class="st-def"><span class="st-pos">网络</span><span class="st-def-t">延期；拖延；延迟</span></div></div><div class="st-src"><div class="st-src-hd"><span class="st-src-n">Wiktionary · 英英释义</span></div><div class="st-def"><span class="st-pos">verb</span><span class="st-def-t">To delay or postpone</span></div><div class="st-ex"><div class="st-ex-en">We're going to defer the decision until we have all the facts.</div></div><div class="st-def"><span class="st-pos">verb</span><span class="st-def-t">After winning the opening coin toss, to postpone until the start of the second half a team's choice of whether to kick off or receive (and to allow the opposing team to make this choice at the start of the first half).</span></div><div class="st-def"><span class="st-pos">verb</span><span class="st-def-t">To submit to the opinion or desire of another in respect to their judgment or authority.</span></div><div class="st-def"><span class="st-pos">verb</span><span class="st-def-t">To render, to offer.</span></div></div>
+          <div class="st-src"><div class="st-src-hd"><span class="st-src-n">双语例句</span></div><div class="st-sent"><div class="st-sent-en">Customers often defer payment for as long as possible.</div><div class="st-sent-zh">顾客们经常尽可能地推迟付款。</div></div><div class="st-sent"><div class="st-sent-en">Let's say, both John and Mary defer to her leadership.</div><div class="st-sent-zh">假设，约翰和玛丽都服从她的领导。</div></div><div class="st-sent"><div class="st-sent-en">If you can defer them, it means you have lots of flexibility.</div><div class="st-sent-zh">如果你可以延迟，那么就意味着你拥有更大的灵活性。</div></div></div>
+        </section>
+      </div>
+      <div class="st-ft"><a class="st-link" target="_blank" rel="noreferrer" href="https://dictionary.cambridge.org/dictionary/english-chinese-simplified/defer">Cambridge</a><a class="st-link" target="_blank" rel="noreferrer" href="https://www.merriam-webster.com/dictionary/defer">Merriam-Webster</a><a class="st-link" target="_blank" rel="noreferrer" href="https://www.collinsdictionary.com/dictionary/english/defer">Collins</a><a class="st-link" target="_blank" rel="noreferrer" href="https://cn.bing.com/dict/search?q=defer">必应词典</a><a class="st-link" target="_blank" rel="noreferrer" href="https://dict.youdao.com/result?word=defer&lang=en">有道</a></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

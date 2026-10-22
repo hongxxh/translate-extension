@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>划词译 · 设置</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    font-size: 13px; color: #1F2329; background: #F6F7F9; line-height: 1.65;
+    padding: 28px 20px 60px;
+  }
+  .wrap { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+  .sub { color: #8A919D; font-size: 12.5px; margin-bottom: 20px; }
+  /* LOGO：亮绿底板 + 天青色 Snell Roundhand 花体 S + 水平 180° 横转 + 重影式重叠 */
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+  .brand h1 { margin-bottom: 0; }
+  .logo {
+    width: 28px; height: 28px; border-radius: 8px; flex: 0 0 auto;
+    background: linear-gradient(180deg, #3DFF9E, #00C853);
+    display: flex; align-items: center; justify-content: center;
+    font-family: "Snell Roundhand", "Segoe Script", "Brush Script MT", "Apple Chancery", cursive;
+    font-weight: 700; font-size: 24px; line-height: 1; color: #B8E7FA;
+    transform: scaleX(-1);
+    box-shadow: 0 2px 6px rgba(0,160,80,.28);
+    animation: st-jitter 2.6s infinite steps(1, end);
+  }
+  @keyframes st-jitter {
+    0%, 86%   { text-shadow: -1px -1px 0 rgba(255,255,255,.8), 1px 1px 0 rgba(6,32,62,.9); transform: scaleX(-1) translate(0, 0); }
+    88%, 90%  { text-shadow: -2px 0 0 rgba(255,255,255,.8),    2px 0 0 rgba(6,32,62,.9);   transform: scaleX(-1) translate(0, -1px); }
+    92%, 94%  { text-shadow: 0 -2px 0 rgba(255,255,255,.8),    0 2px 0 rgba(6,32,62,.9);   transform: scaleX(-1) translate(1px, 0); }
+    96%, 97%  { text-shadow: -2px -2px 0 rgba(255,255,255,.8), 2px 2px 0 rgba(6,32,62,.9); transform: scaleX(-1) translate(-1px, 1px); }
+    98%, 100% { text-shadow: -1px -1px 0 rgba(255,255,255,.8), 1px 1px 0 rgba(6,32,62,.9); transform: scaleX(-1) translate(0, 0); }
+  }
+  @media (prefers-reduced-motion: reduce) { .logo { animation: none; } }
+  .card { background: #fff; border: 1px solid #E4E6EB; border-radius: 12px; padding: 18px 20px; margin-bottom: 14px; }
+  .card h2 { font-size: 13.5px; font-weight: 600; margin-bottom: 3px; }
+  .card .desc { font-size: 12px; color: #8A919D; margin-bottom: 14px; }
+  .field { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+  .field > label { flex: 0 0 108px; font-size: 12.5px; color: #4B5563; padding-top: 7px; }
+  .field > .ctrl { flex: 1 1 auto; min-width: 0; }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%; font: inherit; font-size: 12.5px; padding: 6px 9px;
+    border: 1px solid #DDE0E6; border-radius: 7px; background: #fff; color: #1F2329; outline: none;
+  }
+  input:focus, select:focus, textarea:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,.08); }
+  textarea { resize: vertical; min-height: 76px; line-height: 1.6; }
+  .hint { font-size: 11.5px; color: #9AA1AC; margin-top: 5px; }
+  .inline { display: flex; gap: 8px; align-items: center; }
+  .inline input { flex: 1 1 auto; }
+  button {
+    font: inherit; font-size: 12.5px; padding: 6px 14px; border-radius: 7px; cursor: pointer;
+    border: 1px solid #DDE0E6; background: #fff; color: #374151; white-space: nowrap;
+  }
+  button:hover { border-color: #B9CBE0; color: #185FA5; }
+  button.primary { background: #185FA5; border-color: #185FA5; color: #fff; }
+  button.primary:hover { background: #134B84; color: #fff; }
+  button:disabled { opacity: .55; cursor: default; }
+  .status { display: flex; align-items: center; gap: 8px; font-size: 12.5px; padding: 9px 12px; border-radius: 8px; background: #F7F9FB; border: 1px solid #EAEEF3; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: #C6CBD3; flex: 0 0 auto; }
+  .dot.on { background: #1D9E75; }
+  .dot.warn { background: #E0A11B; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 16px; }
+  label.chk { display: flex; align-items: center; gap: 7px; font-size: 12.5px; color: #374151; cursor: pointer; }
+  input[type=checkbox] { accent-color: #185FA5; width: 14px; height: 14px; }
+  .out { margin-top: 10px; padding: 11px 13px; border-radius: 8px; background: #FBFCFD; border: 1px solid #EDEFF3; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; color: #2B3038; min-height: 42px; }
+  .out.err { background: #FDF7F7; border-color: #F4DEDE; color: #A32D2D; }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; background: #F1F3F5; padding: 1px 5px; border-radius: 4px; }
+  ol.steps { margin: 0 0 0 18px; font-size: 12.5px; color: #4B5563; }
+  ol.steps li { margin-bottom: 5px; }
+  .warn-box { background: #FFFBF0; border: 1px solid #F3E4C2; border-radius: 8px; padding: 10px 13px; font-size: 12px; color: #6B5322; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="brand"><div class="logo">S</div><h1>划词译 · 设置</h1></div>
+  <div class="sub">权威词典开箱即用；机器翻译与模型通道按需填自己的密钥，也有一条零配置通道。</div>
+
+  <div class="card">
+    <h2>1. 翻译通道</h2>
+    <div class="desc">七条通道。「主通道」决定单词/短语用哪个；句子可以单独指定通道（第 7 节）。本地模型与免费机器翻译完全不需要注册。</div>
+    <div class="field">
+      <label for="provider">主通道</label>
+      <div class="ctrl">
+        <select id="provider">
+          <option value="chrome-ai">Chrome 内置 AI（Gemini Nano）· 零配置零密钥、离线</option>
+          <option value="deepl">DeepL · 长句/整段质量最好，免费档仅邮箱注册</option>
+          <option value="azure">Microsoft Translator（Azure）· 需订阅密钥 + 区域</option>
+          <option value="google">Google Cloud Translation · 需 Google Cloud API Key</option>
+          <option value="libre">LibreTranslate · 可自建，免密钥</option>
+          <option value="openai">自定义模型 · OpenAI 兼容接口，自己填 Key</option>
+          <option value="free-mt">免费机器翻译 · 免密钥，质量一般</option>
+        </select>
+        <div class="hint">Chrome 内置 AI 需 Chrome 138+ 且硬件达标（&gt;4GB 显存，或 16GB 内存 + 4 核，22GB 可用磁盘）。不满足时会自动降级。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>降级兜底</label>
+      <div class="ctrl">
+        <label class="chk"><input type="checkbox" id="fallbackEnabled">主通道失败时自动改用免费机器翻译</label>
+      </div>
+    </div>
+    <div class="field">
+      <label>并列对照</label>
+      <div class="ctrl">
+        <label class="chk"><input type="checkbox" id="cmpEnabled">一次显示多个通道的译文（面板里并排）</label>
+        <div class="grid2" id="cmpPick" style="margin-top:9px">
+          <label class="chk"><input type="checkbox" value="chrome-ai">本地模型 · Gemini Nano</label>
+          <label class="chk"><input type="checkbox" value="deepl">DeepL</label>
+          <label class="chk"><input type="checkbox" value="azure">Microsoft Translator</label>
+          <label class="chk"><input type="checkbox" value="google">Google 翻译</label>
+          <label class="chk"><input type="checkbox" value="libre">LibreTranslate</label>
+          <label class="chk"><input type="checkbox" value="openai">自定义模型</label>
+          <label class="chk"><input type="checkbox" value="free-mt">免费机器翻译</label>
+        </div>
+        <div class="hint">
+          勾选哪些通道就并排显示哪些，顺序按上表从上到下固定；<b>至少勾两个</b>才生效，只勾一个会退回单条模式。<br>
+          并列时<b>不走免费机器翻译兜底</b>——哪一列缺密钥就直接报错，否则两列会显示同一个结果、看不出差别。改了勾选后重新划词即可生效。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="openaiCard" hidden>
+    <h2>2. 自定义模型（OpenAI 兼容）</h2>
+    <div class="desc">任何 OpenAI 兼容的 /chat/completions 接口都可以，包括本地 Ollama。不需要开放平台账号。</div>
+    <div class="field">
+      <label for="baseUrl">接口地址</label>
+      <div class="ctrl">
+        <input type="text" id="baseUrl" placeholder="https://api.deepseek.com/v1" spellcheck="false" autocomplete="off">
+        <div class="hint">会自动补上 /chat/completions。本地 Ollama 填 <code>http://localhost:11434/v1</code>。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="model">模型名</label>
+      <div class="ctrl"><input type="text" id="model" placeholder="deepseek-chat" spellcheck="false" autocomplete="off"></div>
+    </div>
+    <div class="field">
+      <label for="apiKey">API Key</label>
+      <div class="ctrl">
+        <input type="password" id="apiKey" placeholder="sk-…" spellcheck="false" autocomplete="off">
+        <div class="hint">保存在本机 chrome.storage.local，不会上传到任何地方。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="deeplCard" hidden>
+    <h2>3. DeepL（长句 / 整段翻译推荐）</h2>
+    <div class="desc">长句和整段译文质量最好的机器翻译，语气与术语保持明显优于通用 MT。Free 档每月 50 万字符，注册只需邮箱。</div>
+    <div class="field">
+      <label for="deeplKey">Auth Key</label>
+      <div class="ctrl">
+        <input type="password" id="deeplKey" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx:fx" spellcheck="false" autocomplete="off">
+        <div class="hint">在 <a href="https://www.deepl.com/zh/pro-api" target="_blank" rel="noreferrer">deepl.com/pro-api</a> 选 Free 档申请。以 <code>:fx</code> 结尾的是 Free Key（自动走 api-free.deepl.com），否则走 Pro。Key 只保存在本机。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="azureCard" hidden>
+    <h2>4. Microsoft Translator（Azure AI 服务）</h2>
+    <div class="desc">必应翻译的官方继任者，110+ 语言，支持自动检测语种。免费档 F0 每月 200 万字符。</div>
+    <div class="field">
+      <label for="azKey">订阅密钥</label>
+      <div class="ctrl">
+        <input type="password" id="azKey" placeholder="Azure 资源的 Key 1 / Key 2" spellcheck="false" autocomplete="off">
+        <div class="hint">Azure 门户 → 创建「翻译器（Translator）」资源 → 密钥与终结点里复制。Key 只保存在本机。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="azRegion">资源区域</label>
+      <div class="ctrl">
+        <input type="text" id="azRegion" placeholder="eastasia" spellcheck="false" autocomplete="off">
+        <div class="hint">资源「位置/区域」的短名，例如 <code>eastasia</code>、<code>westeurope</code>、<code>eastus</code>。多服务/全域资源填 <code>global</code>。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="googleCard" hidden>
+    <h2>5. Google Cloud Translation</h2>
+    <div class="desc">v2 Basic 接口，用 API Key 直连（v3 需要服务账号 JWT，不适合纯客户端扩展）。前 50 万字符/月免费。</div>
+    <div class="field">
+      <label for="ggKey">API Key</label>
+      <div class="ctrl">
+        <input type="password" id="ggKey" placeholder="AIza…" spellcheck="false" autocomplete="off">
+        <div class="hint">Google Cloud 控制台 → 启用 Cloud Translation API → 凭据 → 创建 API 密钥。建议在密钥上限制来源为「无限制」以外的 HTTP 引用（扩展请求不带 Referer，这里只能靠限制 API 类型）。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="libreCard" hidden>
+    <h2>6. LibreTranslate</h2>
+    <div class="desc">开源翻译后端，可自建（<code>docker run libretranslate/libretranslate</code>），自建实例通常免密钥，数据完全自己掌握。</div>
+    <div class="field">
+      <label for="lbBase">服务地址</label>
+      <div class="ctrl">
+        <input type="text" id="lbBase" placeholder="https://libretranslate.com" spellcheck="false" autocomplete="off">
+        <div class="hint">自建填 <code>http://localhost:5000</code>；官方公共服务 <code>https://libretranslate.com</code> 现在需要注册拿 Key。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="lbKey">API Key</label>
+      <div class="ctrl">
+        <input type="password" id="lbKey" placeholder="自建实例可留空" spellcheck="false" autocomplete="off">
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>7. 句子翻译</h2>
+    <div class="desc">句子和单词的诉求不同：单词要释义，句子要通顺。这里单独配句子的通道与显示方式。</div>
+    <div class="field">
+      <label for="sentProvider">专用通道</label>
+      <div class="ctrl">
+        <select id="sentProvider">
+          <option value="follow">跟随主通道（第 1 节）</option>
+          <option value="chrome-ai">Chrome 内置 AI（离线）</option>
+          <option value="deepl">DeepL</option>
+          <option value="azure">Microsoft Translator</option>
+          <option value="google">Google Cloud Translation</option>
+          <option value="libre">LibreTranslate</option>
+          <option value="openai">自定义模型</option>
+          <option value="free-mt">免费机器翻译</option>
+        </select>
+        <div class="hint">例如单词用本地模型快速看释义，长句交给 DeepL。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="sentMode">显示方式</label>
+      <div class="ctrl">
+        <select id="sentMode">
+          <option value="target">只显示译文</option>
+          <option value="bilingual">逐句双语对照</option>
+          <option value="source">先原文后译文</option>
+        </select>
+        <div class="hint">面板标题栏上也有一个「译文 / 对照 / 原文」按钮，划词后可当场切换。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label>拆分与词典</label>
+      <div class="ctrl">
+        <label class="chk" style="margin-bottom:6px"><input type="checkbox" id="sentPerSentence">按句拆分后逐句翻译</label>
+        <label class="chk"><input type="checkbox" id="sentDict">句子模式也查词典</label>
+        <div class="hint">
+          「按句拆分」会把整段切成一句句分别请求，对照模式更整齐，也更容易命中缓存；关掉则整段一次请求（更快，但对照只能整块显示）。<br>
+          「也查词典」默认关闭 —— 词典查不到整句，开着只会多一次网络往返。
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>8. 翻译行为</h2>
+    <div class="desc">控制译入语言与划词交互方式。</div>
+    <div class="field">
+      <label for="targetLang">目标语言</label>
+      <div class="ctrl">
+        <select id="targetLang">
+          <option value="zh-CN">简体中文</option>
+          <option value="zh-TW">繁體中文</option>
+          <option value="en">英语</option>
+          <option value="ja">日语</option>
+          <option value="ko">韩语</option>
+          <option value="fr">法语</option>
+          <option value="de">德语</option>
+          <option value="es">西班牙语</option>
+          <option value="ru">俄语</option>
+        </select>
+        <div class="hint">原文已是中文时，自动改译为英语。</div>
+      </div>
+    </div>
+    <div class="field">
+      <label for="trigger">触发方式</label>
+      <div class="ctrl">
+        <select id="trigger">
+          <option value="icon">划词后显示气泡按钮（推荐）</option>
+          <option value="auto">划词后自动弹出面板</option>
+          <option value="alt">按住 Alt 划词才触发</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>9. 词典来源</h2>
+    <div class="desc">均可单独关闭。Cambridge / Merriam-Webster / Collins 官网以跳转方式提供原文；词典区块默认展开。</div>
+    <div class="grid2">
+      <label class="chk"><input type="checkbox" id="src-youdao">有道词典 · 英汉双解</label>
+      <label class="chk"><input type="checkbox" id="src-collins">柯林斯高阶词典</label>
+      <label class="chk"><input type="checkbox" id="src-wiktionary">Wiktionary · 英英释义</label>
+      <label class="chk"><input type="checkbox" id="src-freedict">Free Dictionary · 英英释义</label>
+      <label class="chk"><input type="checkbox" id="src-ydsimple">有道 · 简明释义</label>
+      <label class="chk"><input type="checkbox" id="src-sentences">双语例句</label>
+      <label class="chk"><input type="checkbox" id="aiEnabled">启用 AI 翻译</label>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>10. 连通性测试</h2>
+    <div class="desc">用一条真实请求验证凭据与通道是否可用。</div>
+    <div class="field">
+      <label for="testInput">测试文本</label>
+      <div class="ctrl"><textarea id="testInput">The committee deferred its decision pending further evidence.</textarea></div>
+    </div>
+    <div class="field">
+      <label></label>
+      <div class="ctrl">
+        <button class="primary" id="runTest">测试 AI 翻译</button>
+        <div class="out" id="testOut">尚未测试。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>11. 使用要点</h2>
+    <ol class="steps">
+      <li>在任意网页选中文字 → 点击气泡「译」按钮 → 面板同时给出译文与词典释义。</li>
+      <li>气泡贴在选区末尾，鼠标不用走远；面板内按 <code>Esc</code> 关闭；点击页面空白处也会关闭。</li>
+      <li>右键菜单「用划词译查询选中的内容」可作为备用入口。</li>
+      <li>查询结果本地缓存 7 天，可在弹窗中一键清除。</li>
+    </ol>
+    <div class="warn-box" style="margin-top:12px">
+      安全说明：扩展是纯客户端形态，各通道的 API Key 都保存在本机 <code>chrome.storage.local</code>，
+      不会上传到任何服务器。若要在团队内分发，建议自建一个后端中转服务持有密钥。
+    </div>
+  </div>
+</div>
+
+<script src="options.js"></script>
+</body>
+</html>

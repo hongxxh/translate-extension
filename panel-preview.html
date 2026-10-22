@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>划词译 · 面板形态预览</title>
+<style>
+  html, body { margin: 0; padding: 0; background: #F6F7F9; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    color: #1F2329; padding: 30px 28px 60px;
+  }
+  .wrap { max-width: 1040px; margin: 0 auto; }
+  h1 { font-size: 17px; font-weight: 600; margin: 0 0 4px; }
+  .sub { font-size: 12.5px; color: #8A919D; margin-bottom: 26px; }
+  .demo { margin-bottom: 30px; }
+  .demo-hd { font-size: 12px; font-weight: 600; color: #6B7280; letter-spacing: .02em; margin-bottom: 9px; }
+  .demo-note { font-size: 12px; color: #8A919D; margin-top: 9px; max-width: 700px; line-height: 1.7; }
+  .st-host { display: inline-block; }
+  .st-card { box-shadow: 0 4px 16px rgba(15,23,42,.08), 0 1px 3px rgba(15,23,42,.05); }
+  .st-card .st-close { cursor: default; }
+  .st-card .st-ch { appearance: none; }
+</style>
+<style>
+
+    .st-card, .st-card * {
+    box-sizing: border-box; margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  }
+  .st-card {
+    width: 384px; max-height: 540px; display: flex; flex-direction: column;
+    background: #FFFFFF; border: 1px solid #E4E6EB; border-radius: 12px;
+    box-shadow: 0 10px 32px rgba(15,23,42,.16), 0 2px 6px rgba(15,23,42,.06);
+    overflow: hidden; color: #1F2329; font-size: 13px; line-height: 1.62;
+    text-align: left; direction: ltr;
+  }
+  .st-hd { padding: 13px 15px 11px; border-bottom: 1px solid #F0F1F4; position: relative; }
+  .st-title { display: flex; align-items: baseline; gap: 8px; padding-right: 26px; }
+  .st-word { font-size: 18px; font-weight: 600; letter-spacing: -.01em; color: #101828; word-break: break-word; }
+  /* 句子模式：原文最多只显示一行，点击展开/收起 */
+  .st-word.is-sent {
+    font-size: 13px; font-weight: 400; color: #4B5563; line-height: 1.55; letter-spacing: 0;
+    display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical;
+    overflow: hidden; cursor: pointer;
+  }
+  .st-word.is-sent.open { display: block; -webkit-line-clamp: unset; white-space: pre-wrap; }
+  .st-word.is-sent.open::after { content: "  收起"; font-size: 11px; color: #9AA1AC; white-space: nowrap; }
+  .st-phon { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; color: #6B7280; font-size: 12px; }
+  .st-phon .st-p { display: inline-flex; align-items: center; gap: 3px; }
+  .st-spk {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 20px; height: 20px; border: 0; border-radius: 5px; background: transparent;
+    color: #185FA5; cursor: pointer; padding: 0;
+  }
+  .st-spk:hover { background: #EAF2FB; }
+  .st-close {
+    position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
+    border: 0; border-radius: 6px; background: transparent; color: #9AA1AC;
+    cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0;
+  }
+  .st-close:hover { background: #F3F4F6; color: #4B5563; }
+  .st-body { overflow-y: auto; overscroll-behavior: contain; flex: 1 1 auto; }
+  .st-body::-webkit-scrollbar { width: 8px; }
+  .st-body::-webkit-scrollbar-thumb { background: #D8DBE1; border-radius: 4px; }
+  .st-body::-webkit-scrollbar-track { background: transparent; }
+
+  .st-sec { padding: 12px 15px; border-bottom: 1px solid #F3F4F6; }
+  .st-sec:last-child { border-bottom: 0; }
+  .st-sec-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .st-badge {
+    font-size: 10px; font-weight: 600; letter-spacing: .04em; padding: 1px 5px;
+    border-radius: 4px; background: #EAF2FB; color: #185FA5; line-height: 1.5;
+  }
+  .st-sec-t { font-size: 11px; font-weight: 600; color: #6B7280; letter-spacing: .02em; }
+  .st-mode { margin-left: auto; font-size: 10px; color: #9AA1AC; }
+  /* 面板内通道切换：做成文字样式，避免破坏标题区的克制感 */
+  .st-ch {
+    font: inherit; font-size: 11px; font-weight: 600; color: #6B7280;
+    letter-spacing: .02em; border: 0; background: transparent; padding: 0 2px;
+    margin: 0 -2px; cursor: pointer; outline: none; max-width: 210px;
+  }
+  .st-ch:hover, .st-ch:focus { color: #185FA5; }
+
+  /* 并列对照：两列等宽并排，中间一条极淡分隔线，不加卡片不抢视觉 */
+  .st-card.is-cmp { max-width: calc(100vw - 16px); }
+  .st-ai-grid { display: grid; gap: 0 14px; align-items: start; }
+  .st-col { min-width: 0; }
+  .st-col + .st-col { border-left: 1px solid #F0F1F4; padding-left: 14px; }
+  .st-col-hd { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+  .st-col-hd b { font-size: 11px; font-weight: 600; color: #374151; letter-spacing: .02em; }
+  .st-col-tag { margin-left: auto; font-size: 10px; color: #9AA1AC; }
+  .st-cmp {
+    font: inherit; font-size: 10.5px; font-weight: 500; color: #6B7280;
+    border: 1px solid #E4E6EB; border-radius: 999px; background: #FFF;
+    padding: 0 7px; margin-left: 2px; cursor: pointer; line-height: 1.6;
+  }
+  .st-cmp:hover { color: #185FA5; border-color: #CBD8E8; background: #F7FAFD; }
+  .st-cmp-tag { font-size: 10px; color: #9AA1AC; letter-spacing: .02em; }
+
+  .st-ai-text { color: #1F2329; white-space: pre-wrap; word-break: break-word; }
+  .st-ai-grid .st-ai-text { font-size: 13px; }
+  .st-ai-grid .st-ai-text.is-word { font-size: 13.5px; }
+  .st-ai-grid .st-ai-text .st-ai-line1 { font-size: 14px; }
+  .st-ai-grid .st-ai-err { font-size: 12px; }
+  .st-ai-text.is-word { font-size: 14px; }
+  .st-ai-text .st-ai-line1 { font-size: 15px; font-weight: 600; color: #101828; }
+  .st-ai-loading { display: flex; flex-direction: column; gap: 6px; padding: 2px 0; }
+  .st-sk { height: 11px; border-radius: 4px; background: linear-gradient(90deg,#F1F3F5 25%,#E7EAEE 37%,#F1F3F5 63%); background-size: 400% 100%; animation: st-skim 1.3s ease-in-out infinite; }
+  @keyframes st-skim { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+  .st-ai-err { color: #6B7280; font-size: 12.5px; }
+  .st-ai-err b { color: #B4232A; font-weight: 500; }
+  .st-act {
+    display: inline-block; margin-top: 8px; padding: 4px 10px; border: 1px solid #CBD8E8;
+    border-radius: 6px; background: #F7FAFD; color: #185FA5; font-size: 12px; cursor: pointer;
+  }
+  .st-act:hover { background: #EAF2FB; }
+
+  .st-src + .st-src { margin-top: 10px; }
+  .st-src-hd { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .st-src-n { font-size: 11px; font-weight: 600; color: #98A1AC; letter-spacing: .02em; }
+  .st-star { color: #E0A11B; font-size: 10px; letter-spacing: 1px; }
+  .st-def { display: flex; gap: 7px; align-items: flex-start; margin-bottom: 5px; }
+  .st-pos {
+    flex: 0 0 auto; font-size: 11px; font-style: italic; color: #185FA5;
+    background: #EAF2FB; border-radius: 4px; padding: 0 5px; margin-top: 2px; line-height: 1.55;
+  }
+  .st-def-t { color: #2B3038; word-break: break-word; }
+  .st-ex { margin: 3px 0 7px 0; padding-left: 9px; border-left: 2px solid #EDEFF3; }
+  .st-ex-en { color: #5A6270; font-size: 12px; }
+  .st-ex-zh { color: #8A919D; font-size: 12px; }
+
+  .st-sent { margin-bottom: 8px; }
+  .st-sent:last-child { margin-bottom: 0; }
+  .st-sent-en { color: #374151; font-size: 12.5px; }
+  .st-sent-zh { color: #6B7280; font-size: 12.5px; }
+
+  .st-empty { color: #9AA1AC; font-size: 12.5px; }
+
+  .st-ft { display: flex; flex-wrap: wrap; gap: 6px; padding: 9px 15px; background: #FAFBFC; border-top: 1px solid #F0F1F4; }
+  .st-link {
+    font-size: 11px; color: #5A6270; text-decoration: none; padding: 2px 8px;
+    border: 1px solid #E4E6EB; border-radius: 999px; background: #fff; cursor: pointer; line-height: 1.6;
+  }
+  .st-link:hover { border-color: #B9CBE0; color: #185FA5; }
+
+  details > summary { list-style: none; cursor: pointer; }
+  details > summary::-webkit-details-marker { display: none; }
+  details > summary .st-src-n::before {
+    content: ""; display: inline-block; width: 0; height: 0; margin-right: 5px;
+    border-left: 4px solid #AAB2BD; border-top: 3.5px solid transparent; border-bottom: 3.5px solid transparent;
+    vertical-align: middle; transition: transform .12s ease;
+  }
+  details[open] > summary .st-src-n::before { transform: rotate(90deg); }
+
+  /* 气泡按钮：天青底板 + 深墨文字，与 LOGO 同色系 */
+  .st-tip {
+    display: flex; align-items: center; justify-content: center; width: 26px; height: 26px;
+    border-radius: 7px; background: linear-gradient(180deg, #B8E7FA, #62C4E8);
+    color: #06203E; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(6,60,120,.38); border: 0; padding: 0;
+    font-size: 13px; font-weight: 600; line-height: 1; user-select: none;
+    text-shadow: 0 1px 0 rgba(255,255,255,.55);
+  }
+  .st-tip:hover { background: linear-gradient(180deg, #A5DFF8, #4FB6E2); }
+  
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>划词译 · 面板形态预览</h1>
+  <div class="sub">样式直接取自 src/content.js 的 CSS 模板，与扩展里完全同源。这里是静态快照，交互不生效。</div>
+
+  <div class="demo">
+    <div class="demo-hd">单词 · 单通道</div>
+    <div class="st-host">
+<div class="st-card">
+  <div class="st-hd">
+    <div class="st-title"><span class="st-word">defer</span></div>
+    <button class="st-close">&#10005;</button>
+  </div>
+  <div class="st-phon">
+    <span class="st-p">英 /dɪˈfɜː(r)/ &#9834;</span>
+    <span class="st-p">美 /dɪˈfɜːr/ &#9834;</span>
+  </div>
+  <div class="st-body">
+    <section class="st-sec">
+      <div class="st-sec-hd">
+        <span class="st-badge">AI</span>
+        <select class="st-ch"><option>腾讯混元 · hy-mt2-pro</option></select>
+        <button class="st-cmp">对照</button>
+        <span class="st-mode"></span>
+      </div>
+      <div class="st-ai-body">
+        <div class="st-ai-text"><div class="st-ai-line1">推迟</div><div>v. 推迟，延期；服从（他人的意愿）</div><div>They deferred the vote until next week. 他们把表决推迟到下周。</div></div>
+      </div>
+    </section>
+    <section class="st-sec">
+      <div class="st-src">
+        <div class="st-src-hd"><span class="st-src-n">有道 · 英汉双解</span></div>
+        <div class="st-ai-text" style="color:#4B5563">vt. 使推迟；使延期；服从</div>
+      </div>
+    </section>
+  </div>
+  <div class="st-ft"></div>
+</div>
+</div>
+    <div class="demo-note">单词走词典式三行输出（首行译文加粗，其后词性释义与例句），标题栏右侧是「对照」按钮。</div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-hd">句子 · 单通道</div>
+    <div class="st-host">
+<div class="st-card">
+  <div class="st-hd">
+    <div class="st-title"><span class="st-word is-sent">The committee deferred its decision pending further evidence.</span></div>
+    <button class="st-close">&#10005;</button>
+  </div>
+  <div class="st-phon"></div>
+  <div class="st-body">
+    <section class="st-sec">
+      <div class="st-sec-hd">
+        <span class="st-badge">AI</span>
+        <select class="st-ch"><option>DeepL</option></select>
+        <button class="st-cmp">对照</button>
+        <span class="st-mode">缓存</span>
+      </div>
+      <div class="st-ai-body">
+        <div class="st-ai-text">委员会推迟了决定，等待进一步的证据。</div>
+      </div>
+    </section>
+  </div>
+  <div class="st-ft"></div>
+</div>
+</div>
+    <div class="demo-note">句子原文只占一行，点击展开。句子不查词典，省一次网络往返。</div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-hd">句子 · 并列 3 列（本地模型 + 腾讯混元 + DeepL）</div>
+    <div class="st-host">
+<div class="st-card is-cmp" style="width:816px">
+  <div class="st-hd">
+    <div class="st-title"><span class="st-word is-sent">The committee deferred its decision pending further evidence.</span></div>
+    <button class="st-close">&#10005;</button>
+  </div>
+  <div class="st-phon"></div>
+  <div class="st-body">
+    <section class="st-sec">
+      <div class="st-sec-hd">
+        <span class="st-badge">AI</span>
+        <span class="st-cmp-tag">并列 3</span>
+        <button class="st-cmp">单条</button>
+        <span class="st-mode"></span>
+      </div>
+      <div class="st-ai-body">
+        <div class="st-ai-grid" style="grid-template-columns:repeat(3,minmax(0,1fr))">
+          <div class="st-col">
+            <div class="st-col-hd"><b>本地模型 · Gemini Nano</b><span class="st-col-tag">本机</span></div>
+            <div class="st-ai-body"><div class="st-ai-text">委员会推迟了决定，等待进一步的证据。</div></div>
+          </div>
+          <div class="st-col">
+            <div class="st-col-hd"><b>腾讯混元翻译</b><span class="st-col-tag"></span></div>
+            <div class="st-ai-body"><div class="st-ai-text">委员会推迟决定，等待进一步证据。</div></div>
+          </div>
+          <div class="st-col">
+            <div class="st-col-hd"><b>DeepL</b><span class="st-col-tag">缓存</span></div>
+            <div class="st-ai-body"><div class="st-ai-text">该委员会暂缓作出决定，以等待进一步的证据。</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="st-ft"></div>
+</div>
+</div>
+    <div class="demo-note">默认就是这三列：本地模型排第一，零配置离线可用，永远是保底那张牌；后面跟两个云端通道。面板宽度按列数算（每列 252px），三列 816px，窄屏会收缩到视口宽度。标题栏的「单条」可以随时切回上一种形态。</div>
+  </div>
+
+  <div class="demo">
+    <div class="demo-hd">并列 2 列 · 一侧缺密钥</div>
+    <div class="st-host">
+<div class="st-card is-cmp" style="width:550px">
+  <div class="st-hd">
+    <div class="st-title"><span class="st-word is-sent">Privacy is not something that I'm merely entitled to, it's an absolute prerequisite.</span></div>
+    <button class="st-close">&#10005;</button>
+  </div>
+  <div class="st-phon"></div>
+  <div class="st-body">
+    <section class="st-sec">
+      <div class="st-sec-hd">
+        <span class="st-badge">AI</span>
+        <span class="st-cmp-tag">并列 2</span>
+        <button class="st-cmp">单条</button>
+        <span class="st-mode"></span>
+      </div>
+      <div class="st-ai-body">
+        <div class="st-ai-grid" style="grid-template-columns:repeat(2,minmax(0,1fr))">
+          <div class="st-col">
+            <div class="st-col-hd"><b>腾讯混元翻译</b><span class="st-col-tag"></span></div>
+            <div class="st-ai-body"><div class="st-ai-text">隐私不是我所仅仅有权享有的东西，它是绝对的前提。</div></div>
+          </div>
+          <div class="st-col">
+            <div class="st-col-hd"><b>DeepL</b><span class="st-col-tag">失败</span></div>
+            <div class="st-ai-body">
+              <div class="st-ai-err"><b>翻译失败：</b>未填写 DeepL 的 Auth Key（设置页第 5 节）</div>
+              <button class="st-act">打开设置并授权</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+  <div class="st-ft"></div>
+</div>
+</div>
+    <div class="demo-note">并列模式不做免费机器翻译兜底：哪一列缺密钥就直接报错，免得两列显示同一个结果、看不出差别。想勾哪几列，在设置页第 1 节「并列对照」里打勾。</div>
+  </div>
+</div>
+</body>
+</html>
