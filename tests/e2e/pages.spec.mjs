@@ -10,7 +10,7 @@ export default async function (t) {
   const context = await launch({
     headless: options.headless !== false,
     channel: options.channel,
-    extensions: options.extensions && options.extensions.length ? options.extensions : ['.'],
+    extensions: options.extensions && options.extensions.length ? options.extensions : ['dist'],
   });
 
   const id = await getExtensionId(context);
@@ -27,7 +27,7 @@ export default async function (t) {
   };
 
   /* ---- 设置页 ---- */
-  const opt = await open('/src/options.html');
+  const opt = await open('/options/index.html');
   await waitFor(() => opt.evaluate(() => !!document.getElementById('sentProvider')),
     { timeout: 5000, message: '设置页加载' });
 
@@ -62,7 +62,7 @@ export default async function (t) {
   log('卡片显隐：' + optInfo.cards.join(' '));
 
   /* ---- 弹窗 ---- */
-  const pop = await open('/src/popup.html');
+  const pop = await open('/popup/index.html');
   await waitFor(() => pop.evaluate(() => !!document.getElementById('provider')),
     { timeout: 5000, message: '弹窗加载' });
 

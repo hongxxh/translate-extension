@@ -50,7 +50,7 @@ export default async function (t) {
     headless: options.headless !== false,
     channel: options.channel,
     // --extension=<dir> 只进了 options，launch 需要显式带上
-    extensions: options.extensions && options.extensions.length ? options.extensions : ['.'],
+    extensions: options.extensions && options.extensions.length ? options.extensions : ['dist'],
   });
   const page = context.pages()[0] || (await context.newPage());
   const logs = captureConsole(page, { label: 'page' });

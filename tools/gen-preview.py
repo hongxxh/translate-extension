@@ -1,21 +1,17 @@
 #!/usr/bin/env python3
-"""从 src/content.js 抽出面板 CSS，生成 panel-preview.html。
+"""从 src/content/ui/styles.css 读面板样式，生成 panel-preview.html。
 
-样式与线上同源：改 content.js 的 CSS 后重跑本脚本即可，避免预览页与实际脱节。
+样式与线上同源：改 styles.css 后重跑本脚本即可，避免预览页与实际脱节。
 用法：python3 tools/gen-preview.py
 """
 import pathlib
 import re
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-src = (ROOT / "src" / "content.js").read_text(encoding="utf-8")
+src = (ROOT / "src" / "content" / "ui" / "styles.css").read_text(encoding="utf-8")
 
-m = re.search(r"const CSS = `(.*?)`;", src, re.S)
-if not m:
-    raise SystemExit("没找到 const CSS 模板字符串")
-css = m.group(1)
 # :host 只在 shadow root 里有效，预览页直接去掉这一条
-css = re.sub(r":host\s*\{[^}]*\}\n?", "", css)
+css = re.sub(r":host\s*\{[^}]*\}\n?", "", src)
 
 WORD_CARD = """
 <div class="st-card">
@@ -181,7 +177,7 @@ html = f"""<!DOCTYPE html>
 <body>
 <div class="wrap">
   <h1>划词译 · 面板形态预览</h1>
-  <div class="sub">样式直接取自 src/content.js 的 CSS 模板，与扩展里完全同源。这里是静态快照，交互不生效。</div>
+  <div class="sub">样式直接取自 src/content/ui/styles.css，与扩展里完全同源。这里是静态快照，交互不生效。</div>
 
   <div class="demo">
     <div class="demo-hd">单词 · 单通道</div>

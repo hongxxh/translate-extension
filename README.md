@@ -82,27 +82,60 @@ Chrome 内置 AI 在**页面上下文（content script）**里调用 —— Web 
 
 ## 安装（开发者模式）
 
+源码是 TypeScript，需要先构建出 `dist/` 再加载：
+
+```bash
+npm install
+npm run build          # 产出 dist/（manifest + background/content/popup/options + icons）
+```
+
 1. 打开 `chrome://extensions` → 右上角开启「开发者模式」
-2. 点「加载已解压的扩展程序」→ 选择本目录（`selecttrans/`）
+2. 点「加载已解压的扩展程序」→ 选择 **`selecttrans/dist`**
 3. 固定到工具栏即可使用；词典功能开箱即用，无需任何配置
+
+开发时用 `npm run watch` 可监听改动增量构建，改完在扩展页点一下刷新即可。
+
+## 常用命令
+
+| 命令 | 作用 |
+| --- | --- |
+| `npm run build` | 一次性构建到 `dist/` |
+| `npm run watch` | 监听源码增量构建 |
+| `npm run typecheck` | `tsc --noEmit` 类型检查 |
+| `npm test` | 构建 + 通道契约测试 + 词典解析冒烟 |
+| `npm run test:e2e` | 真实 Chromium 加载 `dist/` 跑端到端（用全局 testkit） |
+| `npm run zip` | 构建并打成可上传商店的 zip |
 
 ## 文件结构
 
 ```
 selecttrans/
-├── manifest.json          # MV3 清单
+├── build.mjs              # esbuild 构建脚本（4 个入口 + 静态资源拷贝 + zip）
+├── tsconfig.json
 ├── src/
-│   ├── background.js      # 设置与密钥管理 / 词典聚合 / 多通道翻译 / 缓存
-│   ├── content.js         # 划词检测、气泡、Shadow DOM 面板
-│   ├── popup.html / popup.js
-│   ├── options.html / options.js
+│   ├── manifest.json      # MV3 清单（路径相对 dist/ 根目录）
+│   ├── background/        # service worker
+│   │   ├── index.ts       # 消息路由 / 长连接 / 右键菜单
+│   │   ├── TranslationService.ts   # 目标语言判定、缓存、降级、逐句对照
+│   │   ├── dictionary.ts  # 权威词典聚合
+│   │   └── providers/     # 每条通道一个文件 + 注册表
+│   ├── content/           # 划词交互层
+│   │   ├── index.ts       # 幂等注入入口
+│   │   ├── TranslationController.ts  # 编排：选区 / 气泡 / 面板 / 翻译
+│   │   ├── selection/     # 划词监听与选区几何
+│   │   ├── ui/            # Shadow DOM、气泡、面板、样式
+│   │   └── providers/     # 本机 Gemini Nano（只能在页面上下文跑）
+│   ├── shared/            # 背景与页面共用：类型 / 消息协议 / 设置 / 缓存 / 文本
+│   ├── popup/             # 弹窗（index.html + index.ts）
+│   ├── options/           # 设置页（index.html + index.ts）
 │   └── icons/
 ├── tools/
-│   └── gen-icons.py       # 图标生成器（改配色/字体后一条命令重出四尺寸）
+│   ├── gen-icons.py       # 图标生成器
+│   └── gen-preview.py     # 面板静态预览生成器
 ├── tests/e2e/             # 端到端冒烟（用全局 testkit 跑，无需在本项目装 playwright）
 ├── demo.html              # 面板效果预览（真实数据静态渲染）
-├── test-smoke.js          # 词典解析冒烟测试（node test-smoke.js）
-└── test-providers.js      # 通道契约测试（node test-providers.js，无需密钥）
+├── test-smoke.js          # 词典解析冒烟测试
+└── test-providers.js      # 通道契约测试（stub fetch，无需密钥）
 ```
 
 ## LOGO
