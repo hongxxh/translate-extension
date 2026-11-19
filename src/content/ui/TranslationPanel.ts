@@ -54,6 +54,7 @@ const ERR_TEXT: Record<string, string> = {
   GOOGLE_NO_KEY: '未填写 Google 翻译的 API Key（设置页第 5 节）',
   LIBRE_NO_BASEURL: '未填写 LibreTranslate 的服务地址（设置页第 6 节）',
   UNKNOWN_PROVIDER: '未知的翻译通道',
+  BG_DISCONNECTED: '无法连接翻译后台（扩展可能刚被重载，请刷新页面后重试）',
 };
 
 /** 凭据类错误 → 给一个直达设置页的按钮 */

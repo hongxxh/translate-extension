@@ -32,6 +32,7 @@ interface Bound {
 export class SelectionManager {
   private dragging = false;
   private selTimer = 0;
+  private autoTimer = 0;
   private hideTimer = 0;
   private bound: Bound[] = [];
 
@@ -51,6 +52,7 @@ export class SelectionManager {
     for (const b of this.bound) b.target.removeEventListener(b.type, b.fn, b.capture);
     this.bound = [];
     window.clearTimeout(this.selTimer);
+    window.clearTimeout(this.autoTimer);
     window.clearTimeout(this.hideTimer);
   }
 
@@ -80,7 +82,10 @@ export class SelectionManager {
     }
 
     if (s && s.trigger === 'auto') {
-      window.setTimeout(() => {
+      // mouseup 会触发两次 handleSelection（同步 + setTimeout 0），
+      // 这里清掉上一个定时器，保证 260ms 后只开一次面板
+      window.clearTimeout(this.autoTimer);
+      this.autoTimer = window.setTimeout(() => {
         const again = readSelection();
         if (again && again.text.trim() === text) this.cb.onOpen(text, pick.rect);
       }, 260);

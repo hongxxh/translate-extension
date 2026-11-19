@@ -22,6 +22,8 @@ import type {
 } from '../shared/types';
 
 const OPEN_DEDUPE_MS = 800;
+/** 后台连接失败后的退避时长：期间不再发起新的长连接 */
+const BG_BACKOFF_MS = 15000;
 
 export class TranslationController {
   private settings: Settings = mergeSettings(null);
@@ -33,6 +35,9 @@ export class TranslationController {
   private rect: DOMRect | null = null;
   private lastOpen: { text: string; at: number } | null = null;
   private started = false;
+  /* 后台连接失败后的退避窗口：窗口内不再反复 connect（熔断），
+     避免扩展重载/后台未就绪时每次划词都撞一次墙 */
+  private bgBrokenUntil = 0;
 
   constructor() {
     this.tip = new FloatingButton((text, rect) => this.openPanel(text, rect));
@@ -96,6 +101,9 @@ export class TranslationController {
   /* mouseup 与 selectionchange 可能都命中同一段选区，这里做一次去重，
      避免面板被连续开两次、翻译请求也发两遍。 */
   private openOnce(text: string, rect: DOMRect): void {
+    // 面板已经开着同一个词：不重建面板、不重发翻译/词典请求。
+    // 要重试先关面板（点别处或 Esc），否则就是反复 connect + 重复请求。
+    if (this.panel && this.text === text) return;
     const now = Date.now();
     if (this.lastOpen && this.lastOpen.text === text && now - this.lastOpen.at < OPEN_DEDUPE_MS) return;
     this.lastOpen = { text, at: now };
@@ -225,11 +233,37 @@ export class TranslationController {
     if (this.port) {
       try { this.port.disconnect(); } catch { /* 已断开 */ }
     }
+
+    const panel = this.panel;
+    // 熔断：后台刚连不上，退避窗口内不再尝试，直接亮错误
+    if (Date.now() < this.bgBrokenUntil) {
+      const cols = panel && panel.columns;
+      if (cols) cols.forEach((c) => panel.showError('BG_DISCONNECTED', c.body));
+      else if (panel) panel.showError('BG_DISCONNECTED');
+      return;
+    }
+
     const port = chrome.runtime.connect({ name: AI_PORT });
     this.port = port;
     const isWord = isWordLike(text);
+    let gotEvent = false; // 收到过任何回推事件才算这条连接真正可用
+
+    // 连接失败（后台未就绪 / 扩展重载后旧页面残留）必须读掉 runtime.lastError，
+    // 否则 Chrome 会在页面 console 记一条 "Unchecked runtime.lastError"，划词频繁时刷屏
+    port.onDisconnect.addListener(() => {
+      const err = chrome.runtime.lastError;
+      if (this.port !== port) return;
+      this.port = null;
+      try { port.disconnect(); } catch { /* 已断开 */ }
+      // 一条消息都没收到就断 = 后台根本不可达，进入退避窗口，别让下一次划词再撞
+      if (!gotEvent) this.bgBrokenUntil = Date.now() + BG_BACKOFF_MS;
+      if (this.panel) this.panel.showError('BG_DISCONNECTED');
+      void err;
+    });
 
     port.onMessage.addListener((m: AiPortEvent) => {
+      gotEvent = true;
+      this.bgBrokenUntil = 0;
       const panel = this.panel;
       if (!m || !panel) return;
 
@@ -261,7 +295,16 @@ export class TranslationController {
       }
     });
 
-    port.postMessage({ type: 'start', payload: { text, targetLang, provider, providers } });
+    try {
+      port.postMessage({ type: 'start', payload: { text, targetLang, provider, providers } });
+    } catch {
+      // port 已死时 postMessage 会同步抛异常
+      if (this.port === port) {
+        try { port.disconnect(); } catch { /* 已断开 */ }
+        this.port = null;
+      }
+      if (this.panel) this.panel.showError('BG_DISCONNECTED');
+    }
   }
 
   private async startAi(text: string, targetLang: string): Promise<void> {
